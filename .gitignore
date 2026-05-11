@@ -4,7 +4,9 @@ datasets
 pre_trained
 results
 openvino_cache
-
+patchcore_water
+pcb_defect/data
+pcb_defect/DeepPCB-master
 # Test-related files and directories
 tmp*
 
