@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Intel Corporation
+# Copyright (C) 2022-2026 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 """Anomaly detection models.
@@ -26,23 +26,29 @@ Image Models:
     - CSFlow (:class:`anomalib.models.image.Csflow`)
     - DFKDE (:class:`anomalib.models.image.Dfkde`)
     - DFM (:class:`anomalib.models.image.Dfm`)
+    - Dinomaly (:class:`anomalib.models.image.Dinomaly`)
     - DRAEM (:class:`anomalib.models.image.Draem`)
     - DSR (:class:`anomalib.models.image.Dsr`)
     - EfficientAd (:class:`anomalib.models.image.EfficientAd`)
     - FastFlow (:class:`anomalib.models.image.Fastflow`)
     - FRE (:class:`anomalib.models.image.Fre`)
     - GANomaly (:class:`anomalib.models.image.Ganomaly`)
+    - GeneralAD (:class:`anomalib.models.image.GeneralAD`)
+    - L2BT (:class:`anomalib.models.image.L2BT`)
     - PaDiM (:class:`anomalib.models.image.Padim`)
     - PatchCore (:class:`anomalib.models.image.Patchcore`)
+    - PatchFlow (:class:`anomalib.models.image.Patchflow`)
     - Reverse Distillation (:class:`anomalib.models.image.ReverseDistillation`)
     - STFPM (:class:`anomalib.models.image.Stfpm`)
     - SuperSimpleNet (:class:`anomalib.models.image.Supersimplenet`)
     - UFlow (:class:`anomalib.models.image.Uflow`)
+    - UniNet (:class:`anomalib.models.image.UniNet`)
     - VLM-AD (:class:`anomalib.models.image.VlmAd`)
     - WinCLIP (:class:`anomalib.models.image.WinClip`)
 
 Video Models:
     - AI-VAD (:class:`anomalib.models.video.AiVad`)
+    - FUVAS (:class:`anomalib.models.video.Fuvas`)
 """
 
 import logging
@@ -55,6 +61,8 @@ from anomalib.models.components import AnomalibModule
 from anomalib.utils.path import convert_snake_to_pascal_case, convert_to_snake_case, convert_to_title_case
 
 from .image import (
+    L2BT,
+    AnomalyDINO,
     Cfa,
     Cflow,
     Csflow,
@@ -67,8 +75,10 @@ from .image import (
     Fastflow,
     Fre,
     Ganomaly,
+    GeneralAD,
     Padim,
     Patchcore,
+    Patchflow,
     ReverseDistillation,
     Stfpm,
     Supersimplenet,
@@ -93,20 +103,26 @@ class UnknownModelError(ModuleNotFoundError):
 
 
 __all__ = [
+    "AiVad",
+    "AnomalyDINO",
     "Cfa",
     "Cflow",
     "Csflow",
     "Dfkde",
     "Dfm",
-    "Draem",
     "Dinomaly",
+    "Draem",
     "Dsr",
     "EfficientAd",
     "Fastflow",
     "Fre",
+    "Fuvas",
     "Ganomaly",
+    "GeneralAD",
+    "L2BT",
     "Padim",
     "Patchcore",
+    "Patchflow",
     "ReverseDistillation",
     "Stfpm",
     "Supersimplenet",
@@ -114,8 +130,6 @@ __all__ = [
     "UniNet",
     "VlmAd",
     "WinClip",
-    "AiVad",
-    "Fuvas",
 ]
 
 logger = logging.getLogger(__name__)
@@ -143,23 +157,29 @@ def list_models(case: str = "snake") -> set[str]:
         >>> # Get models in snake_case format
         >>> models = list_models(case="snake")
         >>> print(sorted(list(models)))  # doctest: +NORMALIZE_WHITESPACE
-        ['ai_vad', 'cfa', 'cflow', 'csflow', 'dfkde', 'dfm', 'draem',
-         'efficient_ad', 'fastflow', 'fre', 'ganomaly', 'padim', 'patchcore',
-         'reverse_distillation', 'stfpm', 'uflow', 'vlm_ad', 'winclip']
+        ['ai_vad', 'anomaly_d_i_n_o', 'cfa', 'cflow', 'csflow', 'dfkde', 'dfm',
+         'dinomaly', 'draem', 'dsr', 'efficient_ad', 'fastflow', 'fre', 'fuvas',
+         'ganomaly', 'general_a_d', 'l2_b_t', 'padim', 'patchcore', 'patchflow',
+         'reverse_distillation', 'stfpm', 'supersimplenet', 'uflow', 'uni_net',
+         'vlm_ad', 'win_clip']
 
         >>> # Get models in original PascalCase format
         >>> models = list_models(case="pascal")
         >>> print(sorted(list(models)))  # doctest: +NORMALIZE_WHITESPACE
-        ['AiVad', 'Cfa', 'Cflow', 'Csflow', 'Dfkde', 'Dfm', 'Draem',
-         'EfficientAd', 'Fastflow', 'Fre', 'Ganomaly', 'Padim', 'Patchcore',
-         'ReverseDistillation', 'Stfpm', 'Uflow', 'VlmAd', 'WinClip']
+        ['AiVad', 'AnomalyDINO', 'Cfa', 'Cflow', 'Csflow', 'Dfkde', 'Dfm',
+         'Dinomaly', 'Draem', 'Dsr', 'EfficientAd', 'Fastflow', 'Fre', 'Fuvas',
+         'Ganomaly', 'GeneralAD', 'L2BT', 'Padim', 'Patchcore', 'Patchflow',
+         'ReverseDistillation', 'Stfpm', 'Supersimplenet', 'Uflow', 'UniNet',
+         'VlmAd', 'WinClip']
 
         >>> # Get models in title case format
         >>> models = list_models(case="title")
         >>> print(sorted(list(models)))  # doctest: +NORMALIZE_WHITESPACE
-        ['Ai Vad', 'Cfa', 'Cflow', 'Csflow', 'Dfkde', 'Dfm', 'Draem',
-         'Efficient Ad', 'Fastflow', 'Fre', 'Ganomaly', 'Padim', 'Patchcore',
-         'Reverse Distillation', 'Stfpm', 'Uflow', 'Vlm Ad', 'Win Clip']
+        ['Ai Vad', 'Anomaly Dino', 'Cfa', 'Cflow', 'Csflow', 'Dfkde', 'Dfm',
+         'Dinomaly', 'Draem', 'Dsr', 'Efficient Ad', 'Fastflow', 'Fre', 'Fuvas',
+         'Ganomaly', 'General Ad', 'L2BT', 'Padim', 'Patchcore', 'Patchflow',
+         'Reverse Distillation', 'Stfpm', 'Supersimplenet', 'Uflow', 'Uni Net',
+         'Vlm Ad', 'Win Clip']
 
     Note:
         The returned model names can be used with :func:`get_model` to instantiate
@@ -169,7 +189,7 @@ def list_models(case: str = "snake") -> set[str]:
         msg = f"Unsupported format: {case}. Must be one of: snake, pascal, title"
         raise ValueError(msg)
 
-    models = {cls.__name__ for cls in AnomalibModule.__subclasses__() if cls.__name__ != "AnomalyModule"}
+    models = {cls.__name__ for cls in AnomalibModule.__subclasses__()}
 
     if case == "snake":
         return {convert_to_snake_case(name) for name in models}
@@ -250,25 +270,25 @@ def get_model(model: DictConfig | str | dict | Namespace, *args, **kwdargs) -> A
 
         >>> model = get_model("padim")
         >>> model = get_model("efficient_ad")
-        >>> model = get_model("patchcore", input_size=(100, 100))
+        >>> model = get_model("patchcore", num_neighbors=10)
 
         Get model using dictionary config:
 
         >>> model = get_model({"class_path": "Padim"})
         >>> model = get_model(
         ...     {"class_path": "Patchcore"},
-        ...     input_size=(100, 100)
+        ...     num_neighbors=10,
         ... )
         >>> model = get_model({
         ...     "class_path": "Padim",
-        ...     "init_args": {"input_size": (100, 100)}
+        ...     "init_args": {"backbone": "resnet18""}
         ... })
 
         Get model using fully qualified path:
 
         >>> model = get_model({
         ...     "class_path": "anomalib.models.Padim",
-        ...     "init_args": {"input_size": (100, 100)}
+        ...     "init_args": {"backbone": "resnet18""}
         ... })
     """
     model_: AnomalibModule

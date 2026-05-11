@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2024 Intel Corporation
+# Copyright (C) 2023-2026 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 """Anomalib Image Models.
@@ -23,27 +23,34 @@ Example:
     >>> predictions = engine.predict(model=model, datamodule=datamodule)  # doctest: +SKIP
 
 Available Models:
+    - :class: `AnomalyDINO`: Boost Memorybank Models with DINOv2
     - :class:`Cfa`: Contrastive Feature Aggregation
     - :class:`Cflow`: Conditional Normalizing Flow
     - :class:`Csflow`: Conditional Split Flow
     - :class:`Dfkde`: Deep Feature Kernel Density Estimation
     - :class:`Dfm`: Deep Feature Modeling
+    - :class:`Dinomaly`: DinoV2-based Reconstruction Error Model
     - :class:`Draem`: Dual Reconstruction by Adversarial Masking
     - :class:`Dsr`: Deep Spatial Reconstruction
     - :class:`EfficientAd`: Efficient Anomaly Detection
     - :class:`Fastflow`: Fast Flow
     - :class:`Fre`: Feature Reconstruction Error
     - :class:`Ganomaly`: Generative Adversarial Networks
+    - :class:`GeneralAD`: Attending to Distorted Features
+    - :class:`L2BT`: Learning to Be a Transformer to Pinpoint Anomalies
     - :class:`Padim`: Patch Distribution Modeling
     - :class:`Patchcore`: Patch Core
+    - :class:`Patchflow`: Patch Flow
     - :class:`ReverseDistillation`: Reverse Knowledge Distillation
     - :class:`Stfpm`: Student-Teacher Feature Pyramid Matching
     - :class:`SuperSimpleNet`: SuperSimpleNet
     - :class:`Uflow`: Unsupervised Flow
+    - :class:`UniNet`: Student-Teacher Contrastive Learning Model
     - :class:`VlmAd`: Vision Language Model Anomaly Detection
     - :class:`WinClip`: Zero-/Few-Shot CLIP-based Detection
 """
 
+from .anomaly_dino import AnomalyDINO
 from .cfa import Cfa
 from .cflow import Cflow
 from .csflow import Csflow
@@ -56,8 +63,11 @@ from .efficient_ad import EfficientAd
 from .fastflow import Fastflow
 from .fre import Fre
 from .ganomaly import Ganomaly
+from .general_ad import GeneralAD
+from .l2bt import L2BT
 from .padim import Padim
 from .patchcore import Patchcore
+from .patchflow import Patchflow
 from .reverse_distillation import ReverseDistillation
 from .stfpm import Stfpm
 from .supersimplenet import Supersimplenet
@@ -67,19 +77,24 @@ from .vlm_ad import VlmAd
 from .winclip import WinClip
 
 __all__ = [
+    "AnomalyDINO",
     "Cfa",
     "Cflow",
     "Csflow",
     "Dfkde",
     "Dfm",
+    "Dinomaly",
     "Draem",
     "Dsr",
     "EfficientAd",
     "Fastflow",
     "Fre",
     "Ganomaly",
+    "GeneralAD",
+    "L2BT",
     "Padim",
     "Patchcore",
+    "Patchflow",
     "ReverseDistillation",
     "Stfpm",
     "Supersimplenet",
@@ -87,5 +102,4 @@ __all__ = [
     "UniNet",
     "VlmAd",
     "WinClip",
-    "Dinomaly",
 ]

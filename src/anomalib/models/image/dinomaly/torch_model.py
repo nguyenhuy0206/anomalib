@@ -12,7 +12,6 @@ See Also:
         Dinomaly Lightning model.
 """
 
-import math
 from functools import partial
 
 import torch
@@ -22,8 +21,9 @@ from torch import nn
 
 from anomalib.data import InferenceBatch
 from anomalib.models.components import GaussianBlur2d
+from anomalib.models.components.dinov2 import DinoV2Loader
 from anomalib.models.image.dinomaly.components import CosineHardMiningLoss, DinomalyMLP, LinearAttention
-from anomalib.models.image.dinomaly.components import load as load_dinov2_model
+from anomalib.models.image.dinomaly.components import vision_transformer as dinomaly_vision_transformer
 
 # Encoder architecture configurations for DINOv2 models.
 # The target layers are the
@@ -84,6 +84,12 @@ class DinomalyModel(nn.Module):
             If None, uses [[0, 1, 2, 3], [4, 5, 6, 7]].
         remove_class_token (bool): Whether to remove class token from features
             before processing. Defaults to False.
+        use_context_recentering (bool): Whether to apply Context-Aware Recentering
+            from Dinomaly2. When enabled, the class token is subtracted from patch
+            features before reconstruction, conditioning the feature space on
+            class-specific context. This is particularly beneficial for multi-class
+            anomaly detection settings. Incompatible with ``remove_class_token=True``.
+            Defaults to False.
 
     Example:
         >>> model = DinomalyModel(
@@ -103,8 +109,16 @@ class DinomalyModel(nn.Module):
         fuse_layer_encoder: list[list[int]] | None = None,
         fuse_layer_decoder: list[list[int]] | None = None,
         remove_class_token: bool = False,
+        use_context_recentering: bool = False,
     ) -> None:
         super().__init__()
+
+        if use_context_recentering and remove_class_token:
+            msg = (
+                "use_context_recentering=True requires access "
+                "to the class token and is incompatible with remove_class_token=True"
+            )
+            raise ValueError(msg)
 
         if target_layers is None:
             # 8 middle layers of the encoder are used for feature extraction.
@@ -117,7 +131,8 @@ class DinomalyModel(nn.Module):
         if fuse_layer_decoder is None:
             fuse_layer_decoder = DEFAULT_FUSE_LAYERS
 
-        encoder = load_dinov2_model(encoder_name)
+        self.encoder_name = encoder_name
+        encoder = DinoV2Loader(vit_factory=dinomaly_vision_transformer).load(encoder_name)
 
         # Extract architecture configuration based on the model name
         arch_config = self._get_architecture_config(encoder_name, target_layers)
@@ -174,6 +189,7 @@ class DinomalyModel(nn.Module):
         self.fuse_layer_encoder = fuse_layer_encoder
         self.fuse_layer_decoder = fuse_layer_decoder
         self.remove_class_token = remove_class_token
+        self.use_context_recentering = use_context_recentering
 
         if not hasattr(self.encoder, "num_register_tokens"):
             self.encoder.num_register_tokens = 0
@@ -203,8 +219,9 @@ class DinomalyModel(nn.Module):
                 - en: List of fused encoder features reshaped to spatial dimensions
                 - de: List of fused decoder features reshaped to spatial dimensions
         """
+        h_patches = x.shape[2] // self.encoder.patch_size
+        w_patches = x.shape[3] // self.encoder.patch_size
         x = self.encoder.prepare_tokens(x)
-
         encoder_features = []
         decoder_features = []
 
@@ -216,10 +233,19 @@ class DinomalyModel(nn.Module):
                 continue
             if i in self.target_layers:
                 encoder_features.append(x)
-        side = int(math.sqrt(encoder_features[0].shape[1] - 1 - self.encoder.num_register_tokens))
 
         if self.remove_class_token:
             encoder_features = [e[:, 1 + self.encoder.num_register_tokens :, :] for e in encoder_features]
+        elif self.use_context_recentering:
+            # Context-Aware Recentering (Dinomaly2): subtract the class token from
+            # patch features so reconstruction is conditioned on class-specific context.
+            recentered = []
+            for e in encoder_features:
+                cls_token = e[:, 0:1, :]  # (B, 1, D)
+                patch_start = 1 + self.encoder.num_register_tokens
+                patches = e[:, patch_start:, :] - cls_token  # (B, N, D)
+                recentered.append(patches)
+            encoder_features = recentered
 
         x = self._fuse_feature(encoder_features)
         for _i, block in enumerate(self.bottleneck):
@@ -237,8 +263,8 @@ class DinomalyModel(nn.Module):
         de = [self._fuse_feature([decoder_features[idx] for idx in idxs]) for idxs in self.fuse_layer_decoder]
 
         # Process features for spatial output
-        en = self._process_features_for_spatial_output(en, side)
-        de = self._process_features_for_spatial_output(de, side)
+        en = self._process_features_for_spatial_output(en, h_patches, w_patches)
+        de = self._process_features_for_spatial_output(de, h_patches, w_patches)
         return en, de
 
     def forward(self, batch: torch.Tensor, global_step: int | None = None) -> torch.Tensor | InferenceBatch:
@@ -262,7 +288,7 @@ class DinomalyModel(nn.Module):
 
         """
         en, de = self.get_encoder_decoder_outputs(batch)
-        image_size = batch.shape[2]
+        image_size = (batch.shape[2], batch.shape[3])
 
         if self.training:
             if global_step is None:
@@ -376,24 +402,26 @@ class DinomalyModel(nn.Module):
     def _process_features_for_spatial_output(
         self,
         features: list[torch.Tensor],
-        side: int,
+        h_patches: int,
+        w_patches: int,
     ) -> list[torch.Tensor]:
         """Process features for spatial output by removing tokens and reshaping.
 
         Args:
             features: List of feature tensors
-            side: Side length for spatial reshaping
+            h_patches: Number of patches in height dimension
+            w_patches: Number of patches in width dimension
 
         Returns:
             List of processed feature tensors with spatial dimensions
         """
         # Remove class token and register tokens if not already removed
-        if not self.remove_class_token:
+        if not self.remove_class_token and not self.use_context_recentering:
             features = [f[:, 1 + self.encoder.num_register_tokens :, :] for f in features]
 
         # Reshape to spatial dimensions
         batch_size = features[0].shape[0]
-        return [f.permute(0, 2, 1).reshape([batch_size, -1, side, side]).contiguous() for f in features]
+        return [f.permute(0, 2, 1).reshape([batch_size, -1, h_patches, w_patches]).contiguous() for f in features]
 
 
 class DecoderViTBlock(nn.Module):
