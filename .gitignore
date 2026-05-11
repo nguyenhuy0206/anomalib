@@ -3,23 +3,11 @@ datasets
 !src/anomalib/data/datasets
 pre_trained
 results
-<<<<<<< Updated upstream
 openvino_cache
+patchcore_water
 patchcore_water
 pcb_defect/data
 pcb_defect/DeepPCB-master
-=======
-patchcore_water/results/
-patchcore_water/results_paper/
-patchcore_water/water_quality
-
-pcb_defect/results/
-pcb_defect/data
-pcb_defect/DeepPCB-master
-
-openvino_cache
-patchcore_water/crop_data_official
->>>>>>> Stashed changes
 # Test-related files and directories
 tmp*
 

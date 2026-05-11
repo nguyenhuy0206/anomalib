@@ -93,15 +93,10 @@ class Patchcore(MemoryBankMixin, AnomalibModule):
             subsample embeddings. Defaults to ``0.1``.
         num_neighbors (int, optional): Number of nearest neighbors to use.
             Defaults to ``9``.
-<<<<<<< Updated upstream
-        precision (str | PrecisionType, optional): Precision type for model computations.
-            Can be either a string (``"float32"``, ``"float16"``) or a :class:`PrecisionType` enum value.
-=======
         use_simam (bool, optional): Whether to apply SimAM attention to merged
             feature embeddings. Defaults to ``False``.
         precision (str, optional): Precision type for model computations.
             Supported values are defined in :class:`PrecisionType`.
->>>>>>> Stashed changes
             Defaults to ``PrecisionType.FLOAT32``.
         pre_processor (PreProcessor | bool, optional): Pre-processor instance or
             bool flag. Defaults to ``True``.
@@ -152,12 +147,8 @@ class Patchcore(MemoryBankMixin, AnomalibModule):
         pre_trained: bool = True,
         coreset_sampling_ratio: float = 0.1,
         num_neighbors: int = 9,
-<<<<<<< Updated upstream
-        precision: str | PrecisionType = PrecisionType.FLOAT32,
-=======
         use_simam: bool = False,
         precision: str = PrecisionType.FLOAT32,
->>>>>>> Stashed changes
         pre_processor: nn.Module | bool = True,
         post_processor: nn.Module | bool = True,
         evaluator: Evaluator | bool = True,
