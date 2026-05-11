@@ -42,6 +42,7 @@ from torch.nn import functional as F  # noqa: N812
 
 from anomalib.data import InferenceBatch
 from anomalib.models.components import DynamicBufferMixin, KCenterGreedy, TimmFeatureExtractor
+from anomalib.models.components.layers import SimAM
 from anomalib.utils import deprecate
 
 from .anomaly_map import AnomalyMapGenerator
@@ -73,6 +74,8 @@ class PatchcoreModel(DynamicBufferMixin, nn.Module):
             Defaults to ``True``.
         num_neighbors (int, optional): Number of nearest neighbors to use.
             Defaults to ``9``.
+        use_simam (bool, optional): Whether to apply SimAM attention to merged
+            feature embeddings. Defaults to ``False``.
 
     Example:
         >>> from anomalib.models.image.patchcore.torch_model import PatchcoreModel
@@ -111,6 +114,7 @@ class PatchcoreModel(DynamicBufferMixin, nn.Module):
         backbone: str = "wide_resnet50_2",
         pre_trained: bool = True,
         num_neighbors: int = 9,
+        use_simam: bool = False,
     ) -> None:
         super().__init__()
         self.tiler: Tiler | None = None
@@ -124,7 +128,8 @@ class PatchcoreModel(DynamicBufferMixin, nn.Module):
             pre_trained=pre_trained,
             layers=self.layers,
         ).eval()
-        self.feature_pooler = torch.nn.AvgPool2d(3, 1, 1)
+        self.feature_pooler = torch.nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
+        self.simam = SimAM() if use_simam else nn.Identity()
         self.anomaly_map_generator = AnomalyMapGenerator()
         self.memory_bank: torch.Tensor
         self.register_buffer("memory_bank", torch.empty(0))
@@ -165,6 +170,7 @@ class PatchcoreModel(DynamicBufferMixin, nn.Module):
 
         features = {layer: self.feature_pooler(feature) for layer, feature in features.items()}
         embedding = self.generate_embedding(features)
+        embedding = self.simam(embedding)
 
         if self.tiler:
             embedding = self.tiler.untile(embedding)

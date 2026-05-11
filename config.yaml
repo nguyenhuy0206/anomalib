@@ -1,0 +1,33 @@
+data:
+  class_path: anomalib.data.Folder
+  init_args:
+    name: "water_quality"
+    root: "./data/water_quality"
+    normal_dir: "train/normal"
+    normal_test_dir: "test/normal"
+    abnormal_dir: "test/abnormal"
+    
+    image_size: [256, 256] # Kích thước ảnh sau khi resize
+    center_crop_size: [128, 128] # Cắt vùng trung tâm (chỉ lấy nước)
+    
+    train_batch_size: 8
+    eval_batch_size: 8
+    num_workers: 4        
+
+model:
+  class_path: anomalib.models.Patchcore
+  init_args:
+    backbone: "resnet18"
+    pre_trained: true
+
+trainer:
+  max_epochs: 30
+  accelerator: "auto"
+  devices: 1
+  default_root_dir: "./results"
+  logger:
+    class_path: lightning.pytorch.loggers.CSVLogger
+    init_args:
+      save_dir: "./results"
+      name: "metrics"
+

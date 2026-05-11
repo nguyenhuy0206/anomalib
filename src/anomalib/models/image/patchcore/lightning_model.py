@@ -93,8 +93,15 @@ class Patchcore(MemoryBankMixin, AnomalibModule):
             subsample embeddings. Defaults to ``0.1``.
         num_neighbors (int, optional): Number of nearest neighbors to use.
             Defaults to ``9``.
+<<<<<<< Updated upstream
         precision (str | PrecisionType, optional): Precision type for model computations.
             Can be either a string (``"float32"``, ``"float16"``) or a :class:`PrecisionType` enum value.
+=======
+        use_simam (bool, optional): Whether to apply SimAM attention to merged
+            feature embeddings. Defaults to ``False``.
+        precision (str, optional): Precision type for model computations.
+            Supported values are defined in :class:`PrecisionType`.
+>>>>>>> Stashed changes
             Defaults to ``PrecisionType.FLOAT32``.
         pre_processor (PreProcessor | bool, optional): Pre-processor instance or
             bool flag. Defaults to ``True``.
@@ -145,7 +152,12 @@ class Patchcore(MemoryBankMixin, AnomalibModule):
         pre_trained: bool = True,
         coreset_sampling_ratio: float = 0.1,
         num_neighbors: int = 9,
+<<<<<<< Updated upstream
         precision: str | PrecisionType = PrecisionType.FLOAT32,
+=======
+        use_simam: bool = False,
+        precision: str = PrecisionType.FLOAT32,
+>>>>>>> Stashed changes
         pre_processor: nn.Module | bool = True,
         post_processor: nn.Module | bool = True,
         evaluator: Evaluator | bool = True,
@@ -163,6 +175,7 @@ class Patchcore(MemoryBankMixin, AnomalibModule):
             pre_trained=pre_trained,
             layers=layers,
             num_neighbors=num_neighbors,
+            use_simam=use_simam,
         )
         self.coreset_sampling_ratio = coreset_sampling_ratio
 
@@ -181,7 +194,7 @@ class Patchcore(MemoryBankMixin, AnomalibModule):
     @classmethod
     def configure_pre_processor(
         cls,
-        image_size: tuple[int, int] | None = None,
+        image_size: tuple[int, int] | None = (256, 256),
         center_crop_size: tuple[int, int] | None = None,
     ) -> PreProcessor:
         """Configure the default pre-processor for PatchCore.
@@ -208,24 +221,25 @@ class Patchcore(MemoryBankMixin, AnomalibModule):
             ... )
             >>> transformed_image = pre_processor(image)
         """
-        image_size = image_size or (256, 256)
+        transforms = []
+        if image_size is not None:
+            transforms.append(Resize(image_size, antialias=True))
 
         if center_crop_size is not None:
-            if center_crop_size[0] > image_size[0] or center_crop_size[1] > image_size[1]:
+            if image_size is not None and (
+                center_crop_size[0] > image_size[0] or center_crop_size[1] > image_size[1]
+            ):
                 msg = f"Center crop size {center_crop_size} cannot be larger than image size {image_size}."
                 raise ValueError(msg)
-            transform = Compose([
-                Resize(image_size, antialias=True),
-                CenterCrop(center_crop_size),
-                Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ])
-        else:
-            transform = Compose([
-                Resize(image_size, antialias=True),
-                Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ])
+            transforms.append(CenterCrop(center_crop_size))
 
-        return PreProcessor(transform=transform)
+        transforms.append(
+            Normalize(
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225],
+            )
+        )
+        return PreProcessor(transform=Compose(transforms))
 
     @staticmethod
     def configure_optimizers() -> None:

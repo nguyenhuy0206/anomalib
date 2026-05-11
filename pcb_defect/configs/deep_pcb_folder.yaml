@@ -1,0 +1,42 @@
+data:
+  class_path: anomalib.data.Folder
+  init_args:
+    name: "deep_pcb"
+    root: "./pcb_defect/data"
+    normal_dir: "train/normal"
+    abnormal_dir: "test/abnormal"
+    normal_test_dir: "test/normal"
+    extensions:
+      - ".jpg"
+      - ".jpeg"
+      - ".png"
+    train_batch_size: 8
+    eval_batch_size: 8
+    num_workers: 0
+    test_split_mode: from_dir
+    val_split_mode: same_as_test
+    val_split_ratio: 0.5
+    seed: 42
+
+model:
+  class_path: anomalib.models.Patchcore
+  init_args:
+    backbone: "resnet18"
+    pre_trained: true
+    layers:
+      - layer1
+      - layer2
+      - layer3
+    coreset_sampling_ratio: 0.1
+    num_neighbors: 9
+
+trainer:
+  max_epochs: 1
+  accelerator: "auto"
+  devices: 1
+  default_root_dir: "./pcb_defect/results"
+  logger:
+    class_path: lightning.pytorch.loggers.CSVLogger
+    init_args:
+      save_dir: "./pcb_defect/results"
+      name: "patchcore_pcb"

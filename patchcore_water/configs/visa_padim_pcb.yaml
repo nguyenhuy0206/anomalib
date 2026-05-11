@@ -1,0 +1,35 @@
+data:
+  class_path: anomalib.data.Visa
+  init_args:
+    root: "./datasets/visa"
+    category: "pcb1"
+    train_batch_size: 8
+    eval_batch_size: 8
+    num_workers: 4
+    test_split_mode: from_dir
+    val_split_mode: same_as_test
+    test_split_ratio: 0.2
+    val_split_ratio: 0.5
+    seed: 42
+
+model:
+  class_path: anomalib.models.Padim
+  init_args:
+    backbone: "resnet18"
+    pre_trained: true
+    layers:
+      - layer1
+      - layer2
+      - layer3
+    n_features: null
+
+trainer:
+  max_epochs: 1
+  accelerator: "auto"
+  devices: 1
+  default_root_dir: "./results"
+  logger:
+    class_path: lightning.pytorch.loggers.CSVLogger
+    init_args:
+      save_dir: "./results"
+      name: "metrics"

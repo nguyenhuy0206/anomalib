@@ -1,0 +1,10 @@
+class_path: anomalib.data.Folder
+init_args:
+  name: water_quality
+  root: data/water_quality
+  normal_dir: train/normal
+  abnormal_dir: test/abnormal
+  normal_test_dir: test/normal
+  task: classification
+  test_split_mode: from_dir
+  val_split_mode: same_as_test

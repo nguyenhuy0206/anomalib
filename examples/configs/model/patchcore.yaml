@@ -8,3 +8,4 @@ model:
     pre_trained: true
     coreset_sampling_ratio: 0.1
     num_neighbors: 9
+    use_simam: false

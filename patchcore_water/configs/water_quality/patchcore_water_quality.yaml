@@ -1,0 +1,68 @@
+# =========================================
+#  WATER QUALITY ANOMALY DETECTION CONFIG
+#  Model: PatchCore
+# =========================================
+
+model:
+  name: patchcore
+  backbone: resnet18            # đủ nhẹ
+  layers:
+    - layer2
+    - layer3
+  coreset_sampling_ratio: 0.1
+
+dataset:
+  name: water_quality
+  format: folder
+  path: water_quality           # thư mục dataset em đã tạo
+  category: water_quality
+  image_size: 256
+  task: classification
+  train_batch_size: 8
+  eval_batch_size: 8
+  infer_batch_size: 8
+
+  # folder structure
+  train_dir: train/normal
+  test_dir: test
+  normal_test_dir: test/normal
+  abnormal_test_dir: test/abnormal
+
+  # augmentation (nhẹ)
+  transform:
+    train:
+      to_tensor: true
+      normalize: true
+      resize: 256
+      horizontal_flip: true
+      random_brightness_contrast: true
+
+    eval:
+      to_tensor: true
+      normalize: true
+      resize: 256
+
+trainer:
+  max_epochs: 30
+  accelerator: gpu
+  devices: 1
+
+optimization:
+  lr: 0.001
+
+metrics:
+  image_level:
+    - f1score
+    - auroc
+
+logging:
+  log_graph: false
+  log_images: true
+
+visualization:
+  show_images: false
+  save_images: true
+
+project:
+  seed: 42
+  path: outputs/water_quality_patchcore

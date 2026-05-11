@@ -20,6 +20,7 @@ Example:
     >>> output = attention(input_tensor)
 """
 
+from .simam import SimAM
 from .sspcab import SSPCAB
 
-__all__ = ["SSPCAB"]
+__all__ = ["SSPCAB", "SimAM"]
